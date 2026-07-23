@@ -83,7 +83,12 @@
                         <span id="hud-combo" class="text-sm sm:text-lg font-black text-orange-500">Combo x0</span>
                     </div>
 
+                    <!-- SENARAI BUTANG NAVIGATION -->
                     <div class="flex gap-2">
+                        <!-- BUTANG KEMBALI KE MENU UTAMA (BARU) -->
+                        <button onclick="GameManager.goToNextGame()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            🏠 Menu
+                        </button>
                         <button onclick="UIManager.toggleSettingsModal(true)" class="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
                             ⚙️ Tetapan
                         </button>
@@ -230,19 +235,21 @@
             <h2 id="modal-title" class="text-2xl sm:text-3xl font-black text-amber-500 mb-2">GAME OVER</h2>
             <p id="modal-desc" class="text-slate-600 font-bold mb-6 text-xs sm:text-sm">Kucing anda kehilangan semua nyawa!</p>
             
-            <div id="modal-actions" class="flex justify-center flex-wrap gap-3">
-                <button id="btn-next" onclick="GameManager.goToNextGame()" class="hidden bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg transition-all w-full">
-                    Seterusnya ➡️
+            <div id="modal-actions" class="flex flex-col gap-3">
+                <!-- BUTANG KEMBALI KE MENU -->
+                <button id="btn-next" onclick="GameManager.goToNextGame()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg transition-all w-full flex items-center justify-center gap-2">
+                    🏠 Ke Halaman Menu Utama
                 </button>
-                <button onclick="GameManager.restartGame()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg transition-all flex-1">
-                    Restart 🔄
+                <button onclick="GameManager.restartGame()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg transition-all w-full">
+                    Main Semula 🔄
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        const NEXT_GAME_URL = "https://google.com"; 
+        // PAUTAN MENU UTAMA ANDA
+        const NEXT_GAME_URL = "https://smassrgb.github.io/Menu-utama-pemakanan-seimbang/"; 
 
         const RAW_BASE_URL = "https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/";
 
@@ -962,6 +969,7 @@
                 platform.receiveShadow = true;
 
                 const grassGeo = new THREE.BoxGeometry(30, 0.3, 6.1);
+                grassGeo.position = new THREE.Vector3(0, -1.6, 0);
                 const grassMat = new THREE.MeshStandardMaterial({ color: 0x4ade80 });
                 const grass = new THREE.Mesh(grassGeo, grassMat);
                 grass.position.set(0, -1.6, 0);
