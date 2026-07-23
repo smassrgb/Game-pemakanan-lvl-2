@@ -2,1011 +2,1212 @@
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LEVEL 3 - Healthy Plate Hunt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Healthy Cat - Catch the Food!</title>
+    
+    <!-- Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+
     <style>
-        * { 
-            box-sizing: border-box; 
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
+        * {
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            box-sizing: border-box;
         }
-        html, body {
-            width: 100%;
-            height: 100%;
+        body, html {
+            width: 100vw;
+            height: 100dvh;
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #000;
-            touch-action: none;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(to bottom, #7dd3fc, #f472b6);
         }
-        
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 8px; height: 8px; margin-top: -4px; margin-left: -4px;
-            background-color: rgba(255, 255, 255, 0.9); border-radius: 50%;
-            border: 2px solid black; pointer-events: none; z-index: 10;
+        #game-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
-
-        /* BUTANG PAPAN INFO ATAS KIRI */
-        #info-btn {
-            position: absolute; top: 55px; left: 12px; z-index: 30;
-            background: rgba(15, 23, 42, 0.9); border: 2px solid #f59e0b;
-            color: #facc15; font-size: 13px; font-weight: bold;
-            padding: 8px 14px; border-radius: 12px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex;
-            align-items: center; gap: 6px; transition: 0.2s;
+        @keyframes flashRed {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.5; }
         }
-        #info-btn:hover { background: #f59e0b; color: #000; }
-
-        /* KUMPULAN BUTANG ATAS KANAN */
-        .top-right-btns {
-            position: absolute; top: 15px; right: 15px; z-index: 30;
-            display: flex; gap: 10px;
+        .red-flash-overlay {
+            animation: flashRed 0.3s ease-in-out;
         }
-
-        /* BUTANG FULLSCREEN */
-        #fullscreen-btn {
-            background: rgba(15, 23, 42, 0.9); border: 2px solid #22c55e;
-            color: #22c55e; font-size: 13px; font-weight: bold;
-            padding: 8px 14px; border-radius: 12px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex;
-            align-items: center; gap: 6px; transition: 0.2s;
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
         }
-        #fullscreen-btn:hover { background: #22c55e; color: #000; }
-
-        /* BUTANG SETTINGS */
-        #settings-btn {
-            background: rgba(15, 23, 42, 0.9); border: 2px solid #38bdf8;
-            color: #38bdf8; font-size: 13px; font-weight: bold;
-            padding: 8px 14px; border-radius: 12px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); display: flex;
-            align-items: center; gap: 6px; transition: 0.2s;
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
         }
-        #settings-btn:hover { background: #38bdf8; color: #000; }
-
-        /* MODAL SETTINGS UI */
-        #settings-modal {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 400px; background: rgba(15, 23, 42, 0.98);
-            border: 3px solid #38bdf8; border-radius: 20px; padding: 20px;
-            display: none; flex-direction: column; gap: 15px; z-index: 55;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5); color: #fff;
-        }
-        #settings-modal h3 { margin: 0 0 10px 0; color: #38bdf8; text-align: center; font-size: 18px; }
-        .setting-group { display: flex; flex-direction: column; gap: 6px; }
-        .setting-label { font-size: 13px; font-weight: bold; color: #cbd5e1; display: flex; justify-content: space-between; }
-        .setting-slider { width: 100%; cursor: pointer; accent-color: #38bdf8; }
-        .setting-select { 
-            width: 100%; padding: 8px; border-radius: 8px; background: #1e293b; 
-            color: #fff; border: 1px solid #38bdf8; font-weight: bold; cursor: pointer; 
-        }
-
-        /* UI MISI HUD */
-        #ui-overlay {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            display: flex; justify-content: center; align-items: center;
-            pointer-events: none; z-index: 10; width: 95%; max-width: 700px;
-        }
-        .hud-card { 
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.92));
-            color: #ffffff; padding: 8px 16px; 
-            border-radius: 16px; border: 2px solid #f59e0b;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-            text-align: center; width: 100%;
-        }
-        .mission-title {
-            font-size: 13px; font-weight: 800; color: #facc15; letter-spacing: 1px;
-            text-transform: uppercase; margin-bottom: 4px; text-shadow: 1px 1px 3px #000;
-        }
-        .mission-steps {
-            display: flex; justify-content: center; align-items: center; gap: 6px;
-            flex-wrap: wrap; font-size: 11px; font-weight: 600; color: #e2e8f0;
-        }
-        .step-badge {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 2px 6px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;
-        }
-        .step-arrow { color: #f59e0b; font-weight: bold; }
-
-        #interaction-prompt {
-            position: absolute; bottom: 25%; width: 100%; text-align: center;
-            color: #facc15; font-size: 18px; font-weight: bold; text-shadow: 2px 2px 4px #000;
-            display: none; pointer-events: none; z-index: 10; padding: 0 10px;
-        }
-
-        /* CHEF DIALOGUE UI */
-        #chef-dialog-box {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 550px; background: rgba(15, 23, 42, 0.98);
-            border: 3px solid #f59e0b; border-radius: 20px; padding: 20px;
-            color: #ffffff; display: none; flex-direction: column; z-index: 50; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-        #chef-dialog-box h3 { margin: 0 0 10px 0; color: #f59e0b; font-size: 18px; }
-        #chef-dialog-box p { margin: 6px 0; font-size: 13px; line-height: 1.4; color: #e2e8f0; }
-        .chef-info-list { margin: 6px 0 15px 0; padding-left: 20px; font-size: 12px; color: #cbd5e1; }
-        .chef-info-list li { margin-bottom: 4px; }
-        .close-dialog-btn {
-            align-self: center; background: #f59e0b; color: #000; border: none;
-            padding: 10px 24px; border-radius: 20px; font-weight: bold; font-size: 14px;
-            cursor: pointer; transition: 0.2s;
-        }
-
-        /* POP-UP GAMBAR INFOGRAFIK */
-        #info-board-modal {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 600px; background: rgba(15, 23, 42, 0.98);
-            border: 3px solid #38bdf8; border-radius: 20px; padding: 20px;
-            display: none; flex-direction: column; align-items: center; z-index: 55;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
-        }
-        #info-board-modal img {
-            width: 100%; max-height: 60vh; object-fit: contain; border-radius: 12px; border: 2px solid #334155;
-        }
-
-        #blocker {
-            position: absolute; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; color: white; cursor: pointer; z-index: 40;
-            text-align: center; padding: 20px;
-        }
-
-        /* MOBILE CONTROLLERS */
-        #mobile-controls {
-            position: absolute; bottom: 15px; left: 0; width: 100%; height: 160px;
-            pointer-events: none; z-index: 30; display: none;
-        }
-        
-        .dpad-container {
-            position: absolute; bottom: 10px; left: 15px; width: 140px; height: 140px;
-            pointer-events: auto;
-        }
-        .dpad-btn {
-            position: absolute; width: 45px; height: 45px; background: rgba(30, 41, 59, 0.85);
-            border: 2px solid #f59e0b; color: #f59e0b; font-size: 20px; font-weight: bold;
-            display: flex; justify-content: center; align-items: center; border-radius: 12px;
-            user-select: none;
-        }
-        .dpad-btn:active { background: #f59e0b; color: #000; }
-        #btn-up { top: 0; left: 47px; }
-        #btn-down { bottom: 0; left: 47px; }
-        #btn-left { top: 47px; left: 0; }
-        #btn-right { top: 47px; right: 0; }
-
-        .action-container {
-            position: absolute; bottom: 10px; right: 15px; display: flex; gap: 10px;
-            pointer-events: auto; align-items: flex-end;
-        }
-        .action-btn {
-            width: 55px; height: 55px; border-radius: 50%; background: rgba(15, 23, 42, 0.85);
-            border: 2px solid #22c55e; color: #ffffff; font-size: 13px; font-weight: bold;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        .action-btn:active { transform: scale(0.92); background: #22c55e; color: #000; }
-        #btn-run { border-color: #3b82f6; width: 48px; height: 48px; font-size: 11px; }
-        #btn-interact-e { border-color: #facc15; }
-        #btn-interact-f { border-color: #ef4444; }
-
-        /* GAME OVER UI */
-        #game-over {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
-            display: none; flex-direction: column; justify-content: center; align-items: center;
-            color: white; z-index: 60; text-align: center; padding: 20px;
-        }
-        .win-card {
-            background: linear-gradient(135deg, #1e293b, #0f172a); border: 2px solid #22c55e;
-            padding: 25px; border-radius: 20px; box-shadow: 0 0 25px rgba(34, 197, 94, 0.5);
-            max-width: 450px; width: 100%;
-        }
-        button.retry-btn { padding: 12px 28px; font-size: 16px; cursor: pointer; background: #22c55e; border: none; color: white; border-radius: 8px; font-weight: bold; margin-top: 15px; }
     </style>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
 </head>
 <body>
 
-    <!-- BUTANG KEMBALI KE MENU UTAMA (ICA HOME) -->
-    <a href="https://smassrgb.github.io/Menu-utama-pemakanan-seimbang/" 
-       style="position: fixed; top: 12px; left: 12px; z-index: 999; background: rgba(18, 20, 26, 0.9); border: 1px solid rgba(220, 38, 38, 0.6); color: #ffffff; padding: 8px 14px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 6px; backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-        <span style="color: #dc2626;">◄</span> ICA MENU
-    </a>
+    <!-- CANVAS 3D CONTAINER -->
+    <div id="game-container"></div>
 
-    <div id="crosshair"></div>
-    
-    <!-- BUTANG PAPAN INFO ATAS KIRI -->
-    <button id="info-btn" onclick="openInfoModal()">ℹ️ Pemakanan Seimbang</button>
+    <!-- FLASH OVERLAY -->
+    <div id="flash-overlay" class="absolute inset-0 bg-red-600 opacity-0 pointer-events-none z-20"></div>
 
-    <!-- BUTANG ATAS KANAN (FULLSCREEN & SETTINGS) -->
-    <div class="top-right-btns">
-        <button id="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
-        <button id="settings-btn" onclick="openSettingsModal()">⚙️ Settings (ESC)</button>
-    </div>
+    <!-- HUD OVERLAY -->
+    <div id="hud" class="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-3 sm:p-6">
+        <!-- TOP HUD CONTAINER -->
+        <div class="flex flex-col gap-2 w-full max-w-4xl mx-auto">
+            <div class="flex justify-between items-start w-full">
+                <!-- ATAS KIRI: NYAWA -->
+                <div class="bg-white/85 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-sky-300 shadow-lg flex items-center gap-1 pointer-events-auto">
+                    <span id="hud-lives" class="text-xl sm:text-3xl">❤️❤️❤️❤️</span>
+                </div>
 
-    <!-- MODAL SETTINGS UI -->
-    <div id="settings-modal">
-        <h3>⚙️ TETAPAN GAME</h3>
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>🔊 Kelantangan Bunyi (Volume)</span>
-                <span id="volume-val">50%</span>
-            </div>
-            <input type="range" id="volume-slider" class="setting-slider" min="0" max="100" value="50" oninput="updateAudioVolume(this.value)">
-        </div>
+                <!-- TENGAH ATAS: SCORE -->
+                <div class="bg-white/85 backdrop-blur-md px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl border-2 border-sky-300 shadow-lg flex flex-col items-center pointer-events-auto">
+                    <span class="text-[9px] sm:text-[10px] font-black text-slate-500 uppercase tracking-widest">MARKAH</span>
+                    <span id="hud-score" class="text-lg sm:text-2xl font-black text-amber-500">0 / 500</span>
+                </div>
 
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>🎯 Sensitivity (Tetikus / Sentuh)</span>
-                <span id="sens-val">1.0x</span>
-            </div>
-            <input type="range" id="sens-slider" class="setting-slider" min="1" max="30" value="10" oninput="updateSensitivity(this.value)">
-        </div>
+                <!-- ATAS KANAN: COMBO & BUTTONS & SPEECH BUBBLE -->
+                <div class="flex flex-col items-end gap-2 pointer-events-auto">
+                    <div class="bg-white/85 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-sky-300 shadow-lg flex items-center gap-2">
+                        <span id="hud-combo" class="text-sm sm:text-lg font-black text-orange-500">Combo x0</span>
+                    </div>
 
-        <!-- TETAPAN RESOLUTION / KUALITI VISUAL -->
-        <div class="setting-group">
-            <div class="setting-label">
-                <span>🖥️ Resolusi Grafik (Quality)</span>
-            </div>
-            <select id="res-select" class="setting-select" onchange="updateResolution(this.value)">
-                <option value="0.5"> Rendah (0.5x - Prestasi Tinggi)</option>
-                <option value="0.75"> Sederhana (0.75x)</option>
-                <option value="1.0" selected> Standard (1.0x - Disyorkan)</option>
-                <option value="1.5"> Tinggi (1.5x HD)</option>
-                <option value="2.0"> Ultra (2.0x Ultra HD)</option>
-            </select>
-        </div>
+                    <!-- SENARAI BUTANG NAVIGATION -->
+                    <div class="flex gap-2 flex-wrap justify-end">
+                        <!-- BUTANG FULLSCREEN (BARU) -->
+                        <button id="btn-fullscreen" onclick="toggleFullscreen()" class="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            ⛶ Skrin Penuh
+                        </button>
+                        <!-- BUTANG KEMBALI KE MENU UTAMA -->
+                        <button onclick="GameManager.goToNextGame()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            🏠 Menu
+                        </button>
+                        <button onclick="UIManager.toggleSettingsModal(true)" class="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            ⚙️ Tetapan
+                        </button>
+                        <button onclick="UIManager.toggleGuideModal(true)" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            📖 Panduan
+                        </button>
+                    </div>
 
-        <button class="close-dialog-btn" style="margin-top: 10px; background: #38bdf8;" onclick="closeSettingsModal()">Tutup / Simpan</button>
-    </div>
-
-    <!-- UI MISI HUD -->
-    <div id="ui-overlay">
-        <div class="hud-card">
-            <div class="mission-title">🎯 MISI PINGGAN SIHAT</div>
-            <div class="mission-steps">
-                <span class="step-badge">1. 👨‍🍳 Chef</span> <span class="step-arrow">➔</span>
-                <span class="step-badge">2. 🍚 Karbo</span> <span class="step-arrow">➔</span>
-                <span class="step-badge">3. 🥩 Protein</span> <span class="step-arrow">➔</span>
-                <span class="step-badge">4. 🥦 Sayur</span> <span class="step-arrow">➔</span>
-                <span class="step-badge">5. 🍎 Buah</span>
+                    <!-- SPEECH BUBBLE KUCING -->
+                    <div id="cat-speech-bubble" class="transform scale-0 opacity-0 transition-all duration-300 bg-amber-400 text-slate-900 font-extrabold p-2.5 sm:p-3 rounded-2xl shadow-xl border-2 border-white max-w-[160px] sm:max-w-[200px] text-right mt-1">
+                        <div class="text-[10px] sm:text-xs leading-tight" id="cat-speech-text">
+                            🐱 "Makan buah & sayur hari-hari tau!"
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div id="interaction-prompt">Tekan [E] untuk Ambil</div>
 
-    <!-- CHEF DIALOGUE UI -->
-    <div id="chef-dialog-box">
-        <h3>👨‍🍳 Chef Wan Suku: "Selamat Datang ke Dapur Sihat!"</h3>
-        <p><b>Arahan Tugasan:</b> Bantu saya lengkapkan Pinggan Sihat Malaysia dengan mengambil makanan dari meja mengikut urutan dan meletakkannya di atas pinggan bulat utama!</p>
-        <p><b>💡 3 Info Menarik Pemakanan Seimbang (Suku Suku Separuh):</b></p>
-        <ul class="chef-info-list">
-            <li>🍚 <b>Suku Karbohidrat:</b> Roti/Nasi memberikan tenaga utama tubuh tetapi perlu dikawal porsinya.</li>
-            <li>🍗 <b>Suku Protein:</b> Ikan/Daging/Ayam membina otot dan membaiki tisu badan.</li>
-            <li>🥗 <b>Separuh Sayur & Buah:</b> Kaya dengan serat, vitamin, dan mineral untuk menguatkan imuniti!</li>
-        </ul>
-        <button class="close-dialog-btn" onclick="closeChefDialog()">Mula Main / Paham!</button>
-    </div>
-
-    <!-- MODAL GAMBAR INFO BOARD -->
-    <div id="info-board-modal">
-        <h3 style="color: #38bdf8; margin-top: 0;">📋 Panduan Pemakanan Seimbang</h3>
-        <img src="https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/images.jpeg" alt="Papan Info Pemakanan">
-        <button class="close-dialog-btn" style="margin-top: 15px; background: #38bdf8;" onclick="closeInfoModal()">Sambung Main (Klik Skrin)</button>
-    </div>
-
-    <!-- MULA GAME BLOCKER -->
-    <div id="blocker">
-        <h1 style="color: #facc15;">LEVEL 3: Healthy Plate Hunt</h1>
-        <p style="font-size: 18px; font-weight: bold;">Tekan Di Mana-mana Untuk Mula / Lock Mouse</p>
-        <p style="font-size: 13px; color: #f59e0b;"><b>PC/Laptop:</b> WASD (Jalan), MOUSE (Pandang), E (Ambil), F (Letak), ESC (Settings)</p>
-        <p style="font-size: 13px; color: #38bdf8;"><b>Phone:</b> Guna Skrin Touch & Butang Arrow</p>
-    </div>
-
-    <!-- MOBILE CONTROLLERS -->
-    <div id="mobile-controls">
-        <div class="dpad-container">
-            <div class="dpad-btn" id="btn-up">▲</div>
-            <div class="dpad-btn" id="btn-down">▼</div>
-            <div class="dpad-btn" id="btn-left">◀</div>
-            <div class="dpad-btn" id="btn-right">▶</div>
-        </div>
-
-        <div class="action-container">
-            <div class="action-btn" id="btn-run">RUN</div>
-            <div class="action-btn" id="btn-interact-e">AMBIL<br>(E)</div>
-            <div class="action-btn" id="btn-interact-f">LETAK<br>(F)</div>
+        <!-- COMBO POPUP NOTIFICATION -->
+        <div id="combo-badge" class="self-center transform scale-0 transition-transform duration-300 bg-gradient-to-r from-amber-500 to-red-500 text-white font-black px-6 py-2 rounded-full text-base sm:text-xl shadow-2xl border-2 border-white pointer-events-none mb-10">
+            🔥 HEALTHY COMBO x5! (+50)
         </div>
     </div>
 
-    <div id="game-over">
-        <div class="win-card">
-            <h1 id="go-title" style="margin-top: 0; font-size: 22px;">🎉 TAHNIAH! 🎉</h1>
-            <p id="go-msg" style="font-size: 15px; line-height: 1.5;"></p>
-            <button class="retry-btn" onclick="location.reload()">Main Lagi</button>
+    <!-- PANEL TETAPAN / SETTINGS MODAL -->
+    <div id="modal-settings" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border-4 border-sky-300 transform transition-all">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-3 mb-4">
+                <h3 class="text-xl font-black text-slate-800">⚙️ Tetapan Permainan</h3>
+                <button onclick="UIManager.toggleSettingsModal(false)" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">✕</button>
+            </div>
+
+            <div class="space-y-5 text-left">
+                <!-- SOUND SETTINGS -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-black text-slate-700 uppercase">🔊 Kelantangan Bunyi (Volume)</label>
+                        <span id="label-volume" class="text-xs font-black text-sky-600">80%</span>
+                    </div>
+                    <input id="slider-volume" type="range" min="0" max="1" step="0.05" value="0.8" 
+                           oninput="SettingsManager.updateVolume(this.value)"
+                           class="w-full accent-sky-500 cursor-pointer">
+                </div>
+
+                <!-- SENSITIVITY SETTINGS -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-black text-slate-700 uppercase">🎯 Kepekaan Kawalan (Sensitivity)</label>
+                        <span id="label-sensitivity" class="text-xs font-black text-sky-600">1.0x</span>
+                    </div>
+                    <input id="slider-sensitivity" type="range" min="0.5" max="2.5" step="0.1" value="1.0" 
+                           oninput="SettingsManager.updateSensitivity(this.value)"
+                           class="w-full accent-sky-500 cursor-pointer">
+                </div>
+
+                <!-- RESOLUTION SETTINGS -->
+                <div>
+                    <label class="text-xs font-black text-slate-700 uppercase block mb-1">🖥️ Kualiti Grafik (Resolution)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="btn-reso-low" onclick="SettingsManager.updateResolution('low')" class="py-2 text-xs font-black rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                            Rendah
+                        </button>
+                        <button id="btn-reso-med" onclick="SettingsManager.updateResolution('medium')" class="py-2 text-xs font-black rounded-xl border-2 border-sky-500 bg-sky-500 text-white shadow-md transition-all">
+                            Sederhana
+                        </button>
+                        <button id="btn-reso-high" onclick="SettingsManager.updateResolution('high')" class="py-2 text-xs font-black rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                            Tinggi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="UIManager.toggleSettingsModal(false)" class="w-full bg-slate-800 text-white font-extrabold py-3 rounded-2xl shadow-lg mt-6 active:scale-95 transition-all">
+                Simpan & Tutup ✖️
+            </button>
         </div>
     </div>
 
-    <!-- AUDIO BGM & SOUND EFFECTS -->
-    <audio id="bgm" loop preload="auto">
-        <source src="https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/France's%20Most%20Stereotypical%20Music%20%5B81J56YChYo4%5D.mp3" type="audio/mp3">
-    </audio>
-    <audio id="chefAudio" preload="auto">
-        <source src="https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/sul-sul.mp3" type="audio/mp3">
-    </audio>
-    <audio id="winAudio" preload="auto">
-        <source src="https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/pvz-winning-music.mp3" type="audio/mp3">
-    </audio>
+    <!-- PANEL PANDUAN MAKANAN (MODAL SIDEBAR) -->
+    <div id="modal-guide" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm hidden flex justify-end">
+        <div class="bg-white w-full max-w-xs sm:max-w-sm h-full shadow-2xl p-4 sm:p-6 flex flex-col justify-between transform transition-transform duration-300 ease-in-out">
+            <div>
+                <div class="flex justify-between items-center border-b-2 border-slate-100 pb-3 mb-4">
+                    <h3 class="text-lg sm:text-xl font-black text-slate-800">📖 Senarai Makanan</h3>
+                    <button onclick="UIManager.toggleGuideModal(false)" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">✕</button>
+                </div>
+
+                <div class="overflow-y-auto max-h-[70vh] custom-scrollbar pr-1 space-y-4">
+                    <div>
+                        <h4 class="text-xs font-black text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            ✅ Makanan Sihat (+25 Point)
+                        </h4>
+                        <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🥖 Roti</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🥩 Steak</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🍚 Nasi</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🍣 Sushi</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🥕 Carrot</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🥦 Broccoli</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🍎 Apple</div>
+                            <div class="bg-emerald-50 p-2 rounded-xl border border-emerald-200">🍇 Grapes</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-black text-rose-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            ❌ Makanan Tidak Sihat (-1 Nyawa)
+                        </h4>
+                        <div class="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍟 Fries</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍕 Pizza</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍩 Donut</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍔 Burger</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍦 Ice Cream</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍰 Cake</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍬 Candy</div>
+                            <div class="bg-rose-50 p-2 rounded-xl border border-rose-200">🍫 Chocolate</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-xs font-black text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            ⭐ Power-Up Spesial
+                        </h4>
+                        <div class="space-y-1.5 text-xs font-bold text-slate-700">
+                            <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">🍏 Epal Emas (+50 Point)</div>
+                            <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">⏱️ Jam Masa (Perlahankan 5s)</div>
+                            <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">⭐ Perisai Kebal (Perisai 5s)</div>
+                            <div class="bg-amber-50 p-2 rounded-xl border border-amber-200">❤️ Heart (+1 Nyawa)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="UIManager.toggleGuideModal(false)" class="w-full bg-slate-800 text-white font-extrabold py-3 rounded-2xl shadow-lg mt-4">
+                Sambung Game ⏹️
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME OVER / WIN MODAL -->
+    <div id="modal-end" class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl border-4 border-amber-300 transform transition-all scale-95">
+            <h2 id="modal-title" class="text-2xl sm:text-3xl font-black text-amber-500 mb-2">GAME OVER</h2>
+            <p id="modal-desc" class="text-slate-600 font-bold mb-6 text-xs sm:text-sm">Kucing anda kehilangan semua nyawa!</p>
+            
+            <div id="modal-actions" class="flex flex-col gap-3">
+                <!-- BUTANG KEMBALI KE MENU -->
+                <button id="btn-next" onclick="GameManager.goToNextGame()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold px-6 py-3 rounded-2xl shadow-lg transition-all w-full flex items-center justify-center gap-2">
+                    🏠 Ke Halaman Menu Utama
+                </button>
+                <button onclick="GameManager.restartGame()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold px-5 py-3 rounded-2xl shadow-lg transition-all w-full">
+                    Main Semula 🔄
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        const RAW_BASE_URL = "https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/";
-        
-        const PLATE_URL = RAW_BASE_URL + "Plate%20Oval%20by%20MilkAndBanana%20-%2006WhCScuAF.glb";
-        const COUNTER_URL = RAW_BASE_URL + "Counter%20Doors%20by%20Quaternius%20-%20CBUx8ZMVAO.glb";
-        const TABLE_ROUND_URL = RAW_BASE_URL + "Table%20Round%20Small%20by%20Quaternius%20-%20oEArSZykyi.glb";
-        const CHEF_URL = RAW_BASE_URL + "chef.glb";
-
-        const FOOD_ITEMS = [
-            { id: 'roti', name: 'Roti', type: 'carbo', category: 'healthy', modelUrl: RAW_BASE_URL + 'French%20Bread%20by%20Jarlan%20Perez%20-%20amZulae7WRc.glb', baseScale: 0.6, plateY: 1.52 },
-            { id: 'nasi', name: 'Nasi', type: 'carbo', category: 'healthy', modelUrl: RAW_BASE_URL + 'Bowl%20of%20rice%20by%20Poly%20by%20Google%20-%20dcnV-eqevIB.glb', baseScale: 0.5, plateY: 1.68 },
-            { id: 'steak', name: 'Steak', type: 'protein', category: 'healthy', modelUrl: RAW_BASE_URL + 'Steak%20by%20Poly%20by%20Google%20-%2012kExfiW_ba.glb', baseScale: 0.6, plateY: 1.52 },
-            { id: 'sushi', name: 'Sushi', type: 'protein', category: 'healthy', modelUrl: RAW_BASE_URL + 'Sushi%20Nigiri%20by%20Quaternius%20-%20ea93ie9bKj.glb', baseScale: 0.6, plateY: 1.52 },
-            { id: 'carrot', name: 'Carrot', type: 'vege', category: 'healthy', modelUrl: RAW_BASE_URL + 'Carrot%20by%20Poly%20by%20Google%20-%203oFkNid6ofx.glb', baseScale: 0.6, plateY: 1.68 }, 
-            { id: 'broccoli', name: 'Broccoli', type: 'vege', category: 'healthy', modelUrl: RAW_BASE_URL + 'Broccoli%20by%20jeremy%20-%20e2Z3XDxtT41.glb', baseScale: 0.6, plateY: 1.52 },
-            { id: 'apple', name: 'Apple', type: 'fruit', category: 'healthy', modelUrl: RAW_BASE_URL + 'Apple%20by%20jeremy%20-%204tOmpD9-xsV.glb', baseScale: 0.6, plateY: 1.55 },
-            { id: 'grapes', name: 'Grapes', type: 'fruit', category: 'healthy', modelUrl: RAW_BASE_URL + 'Grapes%20by%20jeremy%20-%20csU4Smr2_aV.glb', baseScale: 0.6, plateY: 1.55 },
-            { id: 'fries', name: 'Fries', type: 'junk', category: 'unhealthy', modelUrl: RAW_BASE_URL + 'French%20fries%20by%20Poly%20by%20Google%20-%204hpYt9IW-1k.glb', baseScale: 0.6 },
-            { id: 'pizza', name: 'Pizza', type: 'junk', category: 'unhealthy', modelUrl: RAW_BASE_URL + 'Pizza%20Slice%20by%20Quaternius%20-%20CA4HtaaMJn.glb', baseScale: 0.6 },
-            { id: 'donut', name: 'Donut', type: 'junk', category: 'unhealthy', modelUrl: RAW_BASE_URL + 'Donut%20by%20Quaternius%20-%20UQRRrsP3wj.glb', baseScale: 0.5 },
-            { id: 'burger', name: 'Burger', type: 'junk', category: 'unhealthy', modelUrl: RAW_BASE_URL + 'Cheeseburger%20by%20Poly%20by%20Google%20-%20eke7qcu_FR2.glb', baseScale: 0.6 },
-            { id: 'icecream', name: 'Ice Cream', type: 'junk', category: 'unhealthy', modelUrl: RAW_BASE_URL + 'Ice%20Cream%20by%20Quaternius%20-%20iZiAPq7Sne.glb', baseScale: 0.6 },
-            { id: 'cake', name: 'Cake', type: 'junk', category: 'unhealthy', modelUrl: RAW_BASE_URL + 'Cake%20by%20Kenney%20-%20KGFyP16ebH.glb', baseScale: 0.7 }
-        ];
-
-        let scene, camera, renderer, controls;
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, isSprinting = false;
-        let velocity = new THREE.Vector3();
-        let prevTime = performance.now();
-
-        let gltfLoader = new THREE.GLTFLoader();
-        let raycaster = new THREE.Raycaster();
-        let interactables = [];
-        let hoveredObject = null;
-        let heldItem = null;
-
-        let lives = 4;
-        let score = 0;
-        let timeLeft = 90;
-        let gameActive = false;
-        let isMobile = false;
-        let manualUnlock = false;
-        let plateSlotState = { carbo: false, protein: false, vege: false, fruit: false };
-        let plateObject, chefObject;
-        
-        let bgmAudio = document.getElementById('bgm');
-        let chefAudio = document.getElementById('chefAudio');
-        let winAudio = document.getElementById('winAudio');
-
-        let soundVolume = 0.5;
-        let sensitivity = 1.0;
-        let resolutionScale = 1.0;
-
-        let touchActive = false;
-        let activeTouchId = null;
-        let lastTouchX = 0, lastTouchY = 0;
-
-        function checkMobile() {
-            return (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768);
-        }
-
-        /* FUNGSI TOGGLE FULLSCREEN */
+        /* FUNGSI SKRIN PENUH (FULLSCREEN) */
         function toggleFullscreen() {
-            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.msRequestFullscreen) {
-                    document.documentElement.msRequestFullscreen();
-                } else if (document.documentElement.mozRequestFullScreen) {
-                    document.documentElement.mozRequestFullScreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+            const btn = document.getElementById('btn-fullscreen');
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari / iOS */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                    elem.msRequestFullscreen();
                 }
+                if (btn) btn.innerHTML = '↙️ Kecilkan';
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
                 } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
                 }
+                if (btn) btn.innerHTML = '⛶ Skrin Penuh';
             }
         }
 
-        function updateAudioVolume(val) {
-            soundVolume = val / 100;
-            document.getElementById('volume-val').innerText = `${val}%`;
-            if (bgmAudio) bgmAudio.volume = soundVolume;
-            if (chefAudio) chefAudio.volume = soundVolume;
-            if (winAudio) winAudio.volume = soundVolume;
-        }
+        /* TUKAR TEKS BUTANG BILA KELUAR FULLSCREEN DENGAN ESCAPE KEY */
+        document.addEventListener('fullscreenchange', updateFullscreenButtonText);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButtonText);
 
-        function updateSensitivity(val) {
-            sensitivity = val / 10;
-            document.getElementById('sens-val').innerText = `${sensitivity.toFixed(1)}x`;
-            if (controls && controls.pointerSpeed !== undefined) {
-                controls.pointerSpeed = sensitivity;
-            }
-        }
-
-        function updateResolution(val) {
-            resolutionScale = parseFloat(val);
-            if (renderer) {
-                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * resolutionScale);
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        function openSettingsModal() {
-            manualUnlock = true;
-            document.getElementById('settings-modal').style.display = 'flex';
-            if (!isMobile && controls) controls.unlock();
-        }
-
-        function closeSettingsModal() {
-            manualUnlock = false;
-            document.getElementById('settings-modal').style.display = 'none';
-            playBGM();
-            if (!isMobile && gameActive) controls.lock();
-        }
-
-        function playChefSound() {
-            if (chefAudio) {
-                chefAudio.currentTime = 0;
-                chefAudio.play().catch(e => console.log("Audio play error", e));
-            }
-        }
-
-        function playBGM() {
-            if (bgmAudio) {
-                bgmAudio.play().catch(e => console.log("BGM Audio blocked/error", e));
-            }
-        }
-
-        function closeChefDialog() {
-            manualUnlock = false;
-            document.getElementById('chef-dialog-box').style.display = 'none';
-            playBGM();
-            if (!isMobile) controls.lock();
-        }
-
-        function openInfoModal() {
-            manualUnlock = true;
-            const modal = document.getElementById('info-board-modal');
-            modal.style.display = 'flex';
-            if (!isMobile) controls.unlock();
-        }
-
-        function closeInfoModal() {
-            manualUnlock = false;
-            const modal = document.getElementById('info-board-modal');
-            modal.style.display = 'none';
-            playBGM();
-            if (!isMobile && gameActive) controls.lock();
-        }
-
-        function autoScaleAndCenterModel(model, targetSize) {
-            model.scale.set(1, 1, 1);
-            model.updateMatrixWorld(true);
-            const box = new THREE.Box3();
-            model.traverse((child) => { if (child.isMesh) box.expandByObject(child); });
-            const size = new THREE.Vector3(); box.getSize(size);
-            const maxDimension = Math.max(size.x, size.y, size.z);
-            if (maxDimension > 0.001 && isFinite(maxDimension)) {
-                model.scale.setScalar(targetSize / maxDimension);
+        function updateFullscreenButtonText() {
+            const btn = document.getElementById('btn-fullscreen');
+            if (!btn) return;
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                btn.innerHTML = '↙️ Kecilkan';
             } else {
-                model.scale.setScalar(targetSize);
+                btn.innerHTML = '⛶ Skrin Penuh';
             }
         }
 
-        function createCabinetLabel(text, bgColor = 'rgba(15, 23, 42, 0.85)', borderColor = '#f59e0b') {
-            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = bgColor; ctx.lineWidth = 6; ctx.strokeStyle = borderColor;
-            if (ctx.roundRect) { ctx.roundRect(10, 10, 492, 108, 20); } else { ctx.rect(10, 10, 492, 108); }
-            ctx.fill(); ctx.stroke();
-            ctx.fillStyle = '#ffffff'; ctx.font = 'Bold 36px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(text, 256, 64);
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false }));
-            sprite.scale.set(2.2, 0.55, 1);
-            return sprite;
-        }
+        // PAUTAN MENU UTAMA ANDA
+        const NEXT_GAME_URL = "https://smassrgb.github.io/Menu-utama-pemakanan-seimbang/"; 
 
-        function createNameTag(text, parentModel, heightOffset = 0.5) {
-            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'; ctx.lineWidth = 4; ctx.strokeStyle = '#f59e0b';
-            if (ctx.roundRect) { ctx.roundRect(10, 10, 492, 108, 20); } else { ctx.rect(10, 10, 492, 108); }
-            ctx.fill(); ctx.stroke();
-            ctx.fillStyle = '#ffffff'; ctx.font = 'Bold 42px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(text, 256, 64);
-            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false }));
-            const parentScale = parentModel.scale.x || 1;
-            sprite.scale.set(0.8 / parentScale, 0.2 / parentScale, 1);
-            sprite.position.set(0, heightOffset / parentScale, 0);
-            sprite.userData.isTag = true;
-            return sprite;
-        }
+        const RAW_BASE_URL = "https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/";
 
-        function createStripedWallTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
-            const ctx = canvas.getContext('2d');
+        const MARSEY_CAT_URL = RAW_BASE_URL + 'Marsey%20by%20marsey%20-%2050sLsNkFOa.glb';
+        const BGM_URL = RAW_BASE_URL + 'Soundtrack%20Game%20Pou%20-%20Connect%20Cliff%20Jump%20Cliff%20Dash%20Jet%20Pou%20(Original%20HD%20Audio)%20%5BWAFILiz0o3U%5D.mp3';
 
-            const colors = ['#fef08a', '#f472b6', '#38bdf8', '#4ade80', '#fb923c', '#c084fc'];
-            const stripeWidth = 64; 
+        const GROUND_Y = -1.6; 
+        const CAT_Y_POS = -1.45;
 
-            for (let x = 0; x < canvas.width; x += stripeWidth) {
-                const color = colors[(x / stripeWidth) % colors.length];
-                ctx.fillStyle = color;
-                ctx.fillRect(x, 0, stripeWidth, canvas.height);
+        const HEALTH_TIPS = [
+            "🐱 Minum air masak secukupnya!",
+            "🐱 Broccoli ada Vitamin C!",
+            "🐱 Kurangkan makanan manis!",
+            "🐱 Roti & Nasi bagi tenaga!",
+            "🐱 Epal sihat & bantu penghadaman!",
+            "🐱 Susu buat tulang & gigi kuat!",
+            "🐱 Elakkan kerap makan Pizza!"
+        ];
 
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-                ctx.fillRect(x, 0, 4, canvas.height);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.fillRect(x + stripeWidth - 4, 0, 4, canvas.height);
-            }
+        const FOOD_ITEMS = [
+            { id: 'roti', name: 'Roti', category: 'healthy', color: 0xd97706, modelUrl: RAW_BASE_URL + 'French%20Bread%20by%20Jarlan%20Perez%20-%20amZulae7WRc.glb', scale: 0.7 },
+            { id: 'steak', name: 'Steak', category: 'healthy', color: 0x9f1239, modelUrl: RAW_BASE_URL + 'Steak%20by%20Poly%20by%20Google%20-%2012kExfiW_ba.glb', scale: 0.7 },
+            { id: 'nasi', name: 'Nasi', category: 'healthy', color: 0xf8fafc, modelUrl: RAW_BASE_URL + 'Bowl%20of%20rice%20by%20Poly%20by%20Google%20-%20dcnV-eqevIB.glb', scale: 0.7 },
+            { id: 'sushi', name: 'Sushi', category: 'healthy', color: 0xef4444, modelUrl: RAW_BASE_URL + 'Sushi%20Nigiri%20by%20Quaternius%20-%20ea93ie9bKj.glb', scale: 0.7 },
+            { id: 'carrot', name: 'Carrot', category: 'healthy', color: 0xf97316, modelUrl: RAW_BASE_URL + 'Carrot%20by%20Poly%20by%20Google%20-%203oFkNid6ofx.glb', scale: 0.7 },
+            { id: 'broccoli', name: 'Broccoli', category: 'healthy', color: 0x22c55e, modelUrl: RAW_BASE_URL + 'Broccoli%20by%20jeremy%20-%20e2Z3XDxtT41.glb', scale: 0.7 },
+            { id: 'apple', name: 'Apple', category: 'healthy', color: 0xdc2626, modelUrl: RAW_BASE_URL + 'Apple%20by%20jeremy%20-%204tOmpD9-xsV.glb', scale: 0.7 },
+            { id: 'grapes', name: 'Grapes', category: 'healthy', color: 0xa855f7, modelUrl: RAW_BASE_URL + 'Grapes%20by%20jeremy%20-%20csU4Smr2_aV.glb', scale: 0.7 },
+            
+            { id: 'fries', name: 'Fries', category: 'unhealthy', color: 0xeab308, modelUrl: RAW_BASE_URL + 'French%20fries%20by%20Poly%20by%20Google%20-%204hpYt9IW-1k.glb', scale: 0.7 },
+            { id: 'pizza', name: 'Pizza', category: 'unhealthy', color: 0xf97316, modelUrl: RAW_BASE_URL + 'Pizza%20Slice%20by%20Quaternius%20-%20CA4HtaaMJn.glb', scale: 0.7 },
+            { id: 'donut', name: 'Donut', category: 'unhealthy', color: 0xec4899, modelUrl: RAW_BASE_URL + 'Donut%20by%20Quaternius%20-%20UQRRrsP3wj.glb', scale: 0.7 },
+            { id: 'burger', name: 'Burger', category: 'unhealthy', color: 0x854d0e, modelUrl: RAW_BASE_URL + 'Cheeseburger%20by%20Poly%20by%20Google%20-%20eke7qcu_FR2.glb', scale: 0.7 },
+            { id: 'icecream', name: 'Ice Cream', category: 'unhealthy', color: 0x38bdf8, modelUrl: RAW_BASE_URL + 'Ice%20Cream%20by%20Quaternius%20-%20iZiAPq7Sne.glb', scale: 0.7 },
+            { id: 'cake', name: 'Cake', category: 'unhealthy', color: 0xf472b6, modelUrl: RAW_BASE_URL + 'Cake%20by%20Kenney%20-%20KGFyP16ebH.glb', scale: 0.7 },
+            { id: 'candy', name: 'Candy', category: 'unhealthy', color: 0xef4444, modelUrl: RAW_BASE_URL + 'Candy%20cane%20by%20Poly%20by%20Google%20-%207DbOKA1uXfK.glb', scale: 0.7 },
+            { id: 'chocolate', name: 'Chocolate', category: 'unhealthy', color: 0x78350f, modelUrl: RAW_BASE_URL + 'Chocolate%20Bar%20by%20Quaternius%20-%20vJsJ1EIiOO.glb', scale: 0.7 }
+        ];
 
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.wrapS = THREE.RepeatWrapping;
-            texture.wrapT = THREE.RepeatWrapping;
-            texture.repeat.set(4, 2);
-            return texture;
-        }
+        const POWER_UPS = [
+            { id: 'golden_apple', powerType: 'score', modelUrl: RAW_BASE_URL + 'golden_apple.glb', scale: 0.65 },
+            { id: 'clock', powerType: 'slow', modelUrl: RAW_BASE_URL + 'Hour%20Glass%20by%20Poly%20by%20Google%20-%200nA658LJlU7.glb', scale: 0.65 },
+            { id: 'star', powerType: 'shield', modelUrl: RAW_BASE_URL + 'Star%20by%20Poly%20by%20Google%20-%200ddNZ3EsIhw.glb', scale: 0.65 },
+            { id: 'heart', powerType: 'heal', modelUrl: RAW_BASE_URL + 'Heart%20by%20Poly%20by%20Google%20-%208RA5hHU5gHK.glb', scale: 0.65 }
+        ];
 
-        init();
-        animate();
+        /* SETTINGS MANAGER */
+        const SettingsManager = {
+            volume: 0.8,
+            sensitivity: 1.0,
+            resolution: 'medium',
 
-        function init() {
-            isMobile = checkMobile();
-
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xfef3c7);
-            scene.fog = new THREE.FogExp2(0xfef3c7, 0.015);
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.7, 4);
-            camera.rotation.order = 'YXZ';
-            scene.add(camera);
-
-            scene.add(new THREE.AmbientLight(0xfff7ed, 0.95));
-            const dirLight = new THREE.DirectionalLight(0xffedd5, 0.8);
-            dirLight.position.set(10, 20, 10);
-            scene.add(dirLight);
-
-            controls = new THREE.PointerLockControls(camera, document.body);
-            controls.pointerSpeed = sensitivity;
-            const blocker = document.getElementById('blocker');
-
-            updateAudioVolume(50);
-
-            controls.addEventListener('lock', function () {
-                blocker.style.display = 'none';
-                document.getElementById('info-board-modal').style.display = 'none';
-                document.getElementById('chef-dialog-box').style.display = 'none';
-                document.getElementById('settings-modal').style.display = 'none';
-                gameActive = true;
-            });
-
-            controls.addEventListener('unlock', function () {
-                if (gameActive && !manualUnlock) {
-                    openSettingsModal();
+            updateVolume(val) {
+                this.volume = parseFloat(val);
+                document.getElementById('label-volume').innerText = `${Math.round(this.volume * 100)}%`;
+                if (AudioManager.bgm) {
+                    AudioManager.bgm.volume = 0.4 * this.volume;
                 }
-            });
+            },
 
-            document.addEventListener('click', (e) => {
-                if (isMobile) return;
-                const modal = document.getElementById('info-board-modal');
-                const chefUI = document.getElementById('chef-dialog-box');
-                const settingsUI = document.getElementById('settings-modal');
-                const gameOver = document.getElementById('game-over');
+            updateSensitivity(val) {
+                this.sensitivity = parseFloat(val);
+                document.getElementById('label-sensitivity').innerText = `${this.sensitivity.toFixed(1)}x`;
+            },
 
-                if (modal.style.display === 'flex' || chefUI.style.display === 'flex' || settingsUI.style.display === 'flex' || gameOver.style.display === 'flex') {
+            updateResolution(level) {
+                this.resolution = level;
+                
+                const btnLow = document.getElementById('btn-reso-low');
+                const btnMed = document.getElementById('btn-reso-med');
+                const btnHigh = document.getElementById('btn-reso-high');
+
+                const resetBtn = (btn) => {
+                    btn.className = "py-2 text-xs font-black rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all";
+                };
+                const setActive = (btn) => {
+                    btn.className = "py-2 text-xs font-black rounded-xl border-2 border-sky-500 bg-sky-500 text-white shadow-md transition-all";
+                };
+
+                resetBtn(btnLow); resetBtn(btnMed); resetBtn(btnHigh);
+
+                let pixelRatio = 1.0;
+                if (level === 'low') {
+                    pixelRatio = 0.75;
+                    setActive(btnLow);
+                } else if (level === 'medium') {
+                    pixelRatio = 1.0;
+                    setActive(btnMed);
+                } else if (level === 'high') {
+                    pixelRatio = Math.min(window.devicePixelRatio, 2);
+                    setActive(btnHigh);
+                }
+
+                if (GameManager.renderer) {
+                    GameManager.renderer.setPixelRatio(pixelRatio);
+                }
+            }
+        };
+
+        /* AUDIO MANAGER */
+        const AudioManager = {
+            ctx: null,
+            bgm: null,
+            isBgmPlaying: false,
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (!this.bgm) {
+                    this.bgm = new Audio(BGM_URL);
+                    this.bgm.loop = true;
+                    this.bgm.volume = 0.4 * SettingsManager.volume;
+                }
+            },
+            playBGM() {
+                this.init();
+                if (!this.isBgmPlaying) {
+                    this.bgm.play().then(() => {
+                        this.isBgmPlaying = true;
+                    }).catch(() => {});
+                }
+            },
+            pauseBGM() {
+                if (this.bgm && this.isBgmPlaying) {
+                    this.bgm.pause();
+                    this.isBgmPlaying = false;
+                }
+            },
+            stopBGM() {
+                this.pauseBGM();
+                if (this.bgm) this.bgm.currentTime = 0;
+            },
+            playYum() {
+                if (!this.ctx || GameManager.isPaused) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(350, now);
+                osc.frequency.exponentialRampToValueAtTime(750, now + 0.15);
+                
+                const vol = 0.3 * SettingsManager.volume;
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(now); osc.stop(now + 0.15);
+            },
+            playBleh() {
+                if (!this.ctx || GameManager.isPaused) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.25);
+                
+                const vol = 0.3 * SettingsManager.volume;
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(now); osc.stop(now + 0.25);
+            },
+            playPowerup() {
+                if (!this.ctx || GameManager.isPaused) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+                
+                const vol = 0.3 * SettingsManager.volume;
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(now); osc.stop(now + 0.2);
+            },
+            playWin() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const vol = 0.2 * SettingsManager.volume;
+                [400, 520, 650, 800].forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                    gain.gain.setValueAtTime(vol, now + i * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.2);
+                });
+            },
+            playLose() {
+                if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const vol = 0.3 * SettingsManager.volume;
+                [300, 240, 180, 120].forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + i * 0.15);
+                    gain.gain.setValueAtTime(vol, now + i * 0.15);
+                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.15 + 0.2);
+                    osc.connect(gain); gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.2);
+                });
+            }
+        };
+
+        /* CHARACTER CONTROLLER */
+        class CharacterController {
+            constructor(scene, loader) {
+                this.scene = scene;
+                this.loader = loader;
+                this.group = new THREE.Group();
+                this.group.position.y = CAT_Y_POS;
+
+                this.modelMesh = null;
+                this.baseScaleFactor = 1.0;
+                this.isBig = false;
+
+                this.shieldMesh = null;
+                this.tearLeft = null;
+                this.tearRight = null;
+
+                this.targetX = 0;
+                this.minX = -4.5;
+                this.maxX = 4.5;
+
+                this.initShieldAndTears();
+                this.loadCatModel();
+                this.scene.add(this.group);
+            }
+
+            initShieldAndTears() {
+                const shieldGeo = new THREE.SphereGeometry(1.1, 24, 24);
+                const shieldMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.35, wireframe: true });
+                this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+                this.shieldMesh.position.y = 0.6;
+                this.shieldMesh.visible = false;
+                this.group.add(this.shieldMesh);
+
+                const tearGeo = new THREE.SphereGeometry(0.06, 12, 12);
+                const tearMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+                this.tearLeft = new THREE.Mesh(tearGeo, tearMat);
+                this.tearRight = new THREE.Mesh(tearGeo, tearMat);
+                this.tearLeft.position.set(-0.3, 0.7, 0.6);
+                this.tearRight.position.set(0.3, 0.7, 0.6);
+                this.tearLeft.visible = false;
+                this.tearRight.visible = false;
+                this.group.add(this.tearLeft);
+                this.group.add(this.tearRight);
+            }
+
+            loadCatModel() {
+                const placeholder = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.6),
+                    new THREE.MeshStandardMaterial({ color: 0xfab1a0 })
+                );
+                placeholder.position.y = 0.6;
+                this.group.add(placeholder);
+                this.modelMesh = placeholder;
+
+                this.loader.load(MARSEY_CAT_URL, (gltf) => {
+                    this.group.remove(this.modelMesh);
+                    const catModel = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(catModel);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    this.baseScaleFactor = 1.3 / maxDim;
+
+                    catModel.scale.set(this.baseScaleFactor, this.baseScaleFactor, this.baseScaleFactor);
+                    catModel.position.set(0, -box.min.y * this.baseScaleFactor, 0);
+
+                    catModel.traverse(c => { if (c.isMesh) c.castShadow = true; });
+                    
+                    this.modelMesh = catModel;
+                    this.group.add(this.modelMesh);
+                });
+            }
+
+            updateSize(score) {
+                if (!this.modelMesh) return;
+                
+                if (score >= 250 && !this.isBig) {
+                    this.isBig = true;
+                    const targetScale = this.baseScaleFactor * 1.4;
+                    gsap.to(this.modelMesh.scale, { x: targetScale, y: targetScale, z: targetScale, duration: 0.4 });
+                } else if (score < 250 && this.isBig) {
+                    this.isBig = false;
+                    const targetScale = this.baseScaleFactor;
+                    gsap.to(this.modelMesh.scale, { x: targetScale, y: targetScale, z: targetScale, duration: 0.4 });
+                }
+            }
+
+            update(delta) {
+                const lerpFactor = THREE.MathUtils.clamp(0.25 * SettingsManager.sensitivity, 0.05, 0.8);
+                this.group.position.x += (this.targetX - this.group.position.x) * lerpFactor;
+                const tilt = (this.targetX - this.group.position.x) * -0.08;
+                this.group.rotation.z = THREE.MathUtils.clamp(tilt, -0.2, 0.2);
+
+                if (this.shieldMesh.visible) {
+                    this.shieldMesh.rotation.y += delta * 2;
+                }
+            }
+
+            setShield(active) {
+                this.shieldMesh.visible = active;
+            }
+
+            resetState() {
+                gsap.killTweensOf(this.group.position);
+                gsap.killTweensOf(this.group.rotation);
+                gsap.killTweensOf(this.tearLeft.position);
+                gsap.killTweensOf(this.tearRight.position);
+
+                this.tearLeft.visible = false;
+                this.tearRight.visible = false;
+                this.group.position.set(0, CAT_Y_POS, 0);
+                this.group.rotation.z = 0;
+                this.setShield(false);
+
+                this.isBig = false;
+                if (this.modelMesh) {
+                    this.modelMesh.scale.set(this.baseScaleFactor, this.baseScaleFactor, this.baseScaleFactor);
+                }
+            }
+
+            playEat() {
+                if (this.modelMesh) {
+                    const curS = this.modelMesh.scale.x;
+                    gsap.to(this.modelMesh.scale, {
+                        x: curS * 1.15,
+                        y: curS * 0.85,
+                        duration: 0.1, yoyo: true, repeat: 1
+                    });
+                }
+            }
+
+            playSad() {
+                gsap.to(this.group.rotation, { z: 0.15, duration: 0.08, yoyo: true, repeat: 3 });
+            }
+
+            playCry() {
+                this.tearLeft.visible = true;
+                this.tearRight.visible = true;
+                gsap.to(this.tearLeft.position, { y: 0.1, duration: 0.5, repeat: -1 });
+                gsap.to(this.tearRight.position, { y: 0.1, duration: 0.5, repeat: -1, delay: 0.15 });
+            }
+
+            playCelebrate() {
+                gsap.to(this.group.position, { y: CAT_Y_POS + 1.0, duration: 0.25, yoyo: true, repeat: 7 });
+            }
+        }
+
+        /* FALLING FOOD SPAWNER */
+        class FoodSpawner {
+            constructor(scene, loader) {
+                this.scene = scene;
+                this.loader = loader;
+                this.activeFoods = [];
+                this.spawnTimer = 0;
+                this.powerupTimer = 0;
+            }
+
+            update(delta, speedMultiplier, currentTargetScore) {
+                this.spawnTimer += delta;
+                this.powerupTimer += delta;
+
+                const spawnInterval = Math.max(0.4, 1.1 - (GameManager.score / currentTargetScore) * 0.5);
+
+                if (this.spawnTimer >= spawnInterval) {
+                    this.spawnTimer = 0;
+                    this.spawnFood(currentTargetScore);
+                }
+
+                if (this.powerupTimer >= 18) {
+                    this.powerupTimer = 0;
+                    this.spawnPowerUp();
+                }
+
+                for (let i = this.activeFoods.length - 1; i >= 0; i--) {
+                    const item = this.activeFoods[i];
+                    const currentFallSpeed = item.baseSpeed * speedMultiplier;
+                    
+                    item.mesh.position.y -= currentFallSpeed * delta;
+                    item.mesh.rotation.y += delta * 1.5;
+
+                    if (item.mesh.position.y < CAT_Y_POS - 0.2) {
+                        this.scene.remove(item.mesh);
+                        this.activeFoods.splice(i, 1);
+                    }
+                }
+            }
+
+            spawnFood(currentTargetScore) {
+                const spawnX = THREE.MathUtils.randFloat(-4.2, 4.2);
+                const itemData = FOOD_ITEMS[Math.floor(Math.random() * FOOD_ITEMS.length)];
+
+                const group = new THREE.Group();
+                group.position.set(spawnX, 8.5, 0);
+
+                const placeholder = new THREE.Mesh(
+                    new THREE.DodecahedronGeometry(0.3),
+                    new THREE.MeshStandardMaterial({ color: itemData.color })
+                );
+                group.add(placeholder);
+                this.scene.add(group);
+
+                const foodObj = {
+                    data: itemData,
+                    mesh: group,
+                    baseSpeed: THREE.MathUtils.randFloat(3.2, 4.8) + (GameManager.score / currentTargetScore) * 2.2,
+                    isPowerUp: false
+                };
+
+                this.activeFoods.push(foodObj);
+
+                this.loader.load(itemData.modelUrl, (gltf) => {
+                    group.remove(placeholder);
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scaleFactor = (0.7 / maxDim) * itemData.scale;
+                    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                    model.traverse(c => { if (c.isMesh) c.castShadow = true; });
+                    group.add(model);
+                });
+            }
+
+            spawnPowerUp() {
+                const spawnX = THREE.MathUtils.randFloat(-4.0, 4.0);
+                const pData = POWER_UPS[Math.floor(Math.random() * POWER_UPS.length)];
+
+                const group = new THREE.Group();
+                group.position.set(spawnX, 8.5, 0);
+
+                const placeholder = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(0.35),
+                    new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xfacc15 })
+                );
+                group.add(placeholder);
+                this.scene.add(group);
+
+                const powerupObj = {
+                    data: pData,
+                    mesh: group,
+                    baseSpeed: 3.5,
+                    isPowerUp: true
+                };
+
+                this.activeFoods.push(powerupObj);
+
+                this.loader.load(pData.modelUrl, (gltf) => {
+                    group.remove(placeholder);
+                    const model = gltf.scene;
+
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scaleFactor = (0.8 / maxDim) * pData.scale;
+                    model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                    model.traverse(c => { if (c.isMesh) c.castShadow = true; });
+                    group.add(model);
+                });
+            }
+
+            clearAll() {
+                this.activeFoods.forEach(f => this.scene.remove(f.mesh));
+                this.activeFoods = [];
+            }
+        }
+
+        /* CONTROLS & COLLISION */
+        class ControlsAndCollisionManager {
+            constructor(cat, spawner, gameManager) {
+                this.cat = cat;
+                this.spawner = spawner;
+                this.gameManager = gameManager;
+
+                this.initControls();
+            }
+
+            initControls() {
+                const handleMove = (clientX) => {
+                    if (!this.gameManager.isPlaying || this.gameManager.isPaused) return;
+                    AudioManager.playBGM();
+                    const normX = (clientX / window.innerWidth) * 2 - 1;
+                    this.cat.targetX = normX * 4.5;
+                };
+
+                window.addEventListener('mousemove', (e) => handleMove(e.clientX));
+                window.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) handleMove(e.touches[0].clientX);
+                });
+
+                window.addEventListener('keydown', (e) => {
+                    if (!this.gameManager.isPlaying || this.gameManager.isPaused) return;
+                    AudioManager.playBGM();
+                    const step = 0.8 * SettingsManager.sensitivity;
+                    if (e.key === 'ArrowLeft' || e.key === 'a') {
+                        this.cat.targetX = Math.max(this.cat.minX, this.cat.targetX - step);
+                    } else if (e.key === 'ArrowRight' || e.key === 'd') {
+                        this.cat.targetX = Math.min(this.cat.maxX, this.cat.targetX + step);
+                    }
+                });
+            }
+
+            checkCollisions() {
+                const catPos = this.cat.group.position;
+                const hitRadius = this.cat.isBig ? 1.25 : 0.95;
+
+                for (let i = this.spawner.activeFoods.length - 1; i >= 0; i--) {
+                    const item = this.spawner.activeFoods[i];
+                    const itemPos = item.mesh.position;
+
+                    const dist = Math.hypot(itemPos.x - catPos.x, itemPos.y - (catPos.y + 0.5));
+
+                    if (dist < hitRadius) {
+                        this.gameManager.onCatchItem(item);
+                        this.spawner.scene.remove(item.mesh);
+                        this.spawner.activeFoods.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        /* UI MANAGER */
+        const UIManager = {
+            speechTimeout: null,
+
+            updateHUD(score, combo, lives, targetScore) {
+                document.getElementById('hud-score').innerText = `${score} / ${targetScore}`;
+                document.getElementById('hud-combo').innerText = `Combo x${combo}`;
+
+                let hearts = '';
+                for (let i = 0; i < 4; i++) {
+                    hearts += i < lives ? '❤️' : '🤍';
+                }
+                document.getElementById('hud-lives').innerText = hearts;
+            },
+
+            showSpeechTip(text) {
+                const bubble = document.getElementById('cat-speech-bubble');
+                const bubbleText = document.getElementById('cat-speech-text');
+                
+                bubbleText.innerText = text;
+                bubble.classList.remove('scale-0', 'opacity-0');
+                bubble.classList.add('scale-100', 'opacity-100');
+
+                if (this.speechTimeout) clearTimeout(this.speechTimeout);
+                this.speechTimeout = setTimeout(() => {
+                    bubble.classList.remove('scale-100', 'opacity-100');
+                    bubble.classList.add('scale-0', 'opacity-0');
+                }, 4000);
+            },
+
+            showCombo(comboVal) {
+                const badge = document.getElementById('combo-badge');
+                badge.innerText = `🔥 HEALTHY COMBO x${comboVal}! (+50)`;
+                badge.classList.remove('scale-0');
+                badge.classList.add('scale-100');
+                setTimeout(() => {
+                    badge.classList.remove('scale-100');
+                    badge.classList.add('scale-0');
+                }, 1200);
+            },
+
+            triggerRedFlash() {
+                const flash = document.getElementById('flash-overlay');
+                flash.classList.add('red-flash-overlay');
+                setTimeout(() => flash.classList.remove('red-flash-overlay'), 300);
+            },
+
+            toggleGuideModal(show) {
+                const modal = document.getElementById('modal-guide');
+                if (show) {
+                    modal.classList.remove('hidden');
+                    GameManager.pauseGame();
+                } else {
+                    modal.classList.add('hidden');
+                    GameManager.resumeGame();
+                }
+            },
+
+            toggleSettingsModal(show) {
+                const modal = document.getElementById('modal-settings');
+                if (show) {
+                    modal.classList.remove('hidden');
+                    GameManager.pauseGame();
+                } else {
+                    modal.classList.add('hidden');
+                    GameManager.resumeGame();
+                }
+            },
+
+            showEndScreen(title, desc, isWin = false) {
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-desc').innerText = desc;
+                
+                const btnNext = document.getElementById('btn-next');
+                if (isWin) {
+                    btnNext.classList.remove('hidden');
+                } else {
+                    btnNext.classList.add('hidden');
+                }
+
+                document.getElementById('modal-end').classList.remove('hidden');
+            },
+
+            hideEndScreen() {
+                document.getElementById('modal-end').classList.add('hidden');
+            }
+        };
+
+        /* GAME MANAGER */
+        const GameManager = {
+            score: 0,
+            targetScore: 500,
+            lives: 4,
+            comboCount: 0,
+            lastMilestoneTip: 0,
+            isPlaying: false,
+            isPaused: false,
+
+            speedMultiplier: 1.0,
+            isShieldActive: false,
+
+            scene: null,
+            camera: null,
+            renderer: null,
+            loader: null,
+
+            cat: null,
+            spawner: null,
+            controls: null,
+            clouds: [],
+            clock: new THREE.Clock(),
+
+            init() {
+                const container = document.getElementById('game-container');
+                this.scene = new THREE.Scene();
+
+                this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+                this.camera.position.set(0, 2.8, 11.0);
+                this.camera.lookAt(0, 1.2, 0);
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                container.appendChild(this.renderer.domElement);
+
+                SettingsManager.updateResolution('medium');
+
+                this.loader = new THREE.GLTFLoader();
+
+                this.buildEnvironment();
+                this.buildBrickPlatform();
+                this.buildClouds();
+
+                this.cat = new CharacterController(this.scene, this.loader);
+                this.spawner = new FoodSpawner(this.scene, this.loader);
+                this.controls = new ControlsAndCollisionManager(this.cat, this.spawner, this);
+
+                window.addEventListener('resize', () => this.onWindowResize());
+
+                this.startGame();
+                this.animate();
+            },
+
+            buildEnvironment() {
+                const ambient = new THREE.AmbientLight(0xffffff, 1.1);
+                this.scene.add(ambient);
+
+                const sunLight = new THREE.DirectionalLight(0xfffdd0, 1.3);
+                sunLight.position.set(5, 12, 6);
+                sunLight.castShadow = true;
+                this.scene.add(sunLight);
+            },
+
+            buildBrickPlatform() {
+                const platformGroup = new THREE.Group();
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#b91c1c'; ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = '#fca5a5'; ctx.lineWidth = 6;
+                
+                for (let y = 0; y <= 256; y += 64) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(256, y); ctx.stroke();
+                }
+                for (let x = 0; x <= 256; x += 64) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 64); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(x + 32, 64); ctx.lineTo(x + 32, 128); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(x, 128); ctx.lineTo(x, 192); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(x + 32, 192); ctx.lineTo(x + 32, 256); ctx.stroke();
+                }
+
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.wrapS = THREE.RepeatWrapping;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.repeat.set(20, 3);
+
+                const geo = new THREE.BoxGeometry(30, 4.0, 6);
+                const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.7 });
+                const platform = new THREE.Mesh(geo, mat);
+                platform.position.set(0, -3.6, 0);
+                platform.receiveShadow = true;
+
+                const grassGeo = new THREE.BoxGeometry(30, 0.3, 6.1);
+                grassGeo.position = new THREE.Vector3(0, -1.6, 0);
+                const grassMat = new THREE.MeshStandardMaterial({ color: 0x4ade80 });
+                const grass = new THREE.Mesh(grassGeo, grassMat);
+                grass.position.set(0, -1.6, 0);
+
+                platformGroup.add(platform);
+                platformGroup.add(grass);
+                this.scene.add(platformGroup);
+            },
+
+            buildClouds() {
+                const cloudGeo = new THREE.DodecahedronGeometry(0.8, 1);
+                const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
+
+                for (let i = 0; i < 6; i++) {
+                    const cloud = new THREE.Group();
+                    const pCount = 3 + Math.floor(Math.random() * 3);
+                    for (let j = 0; j < pCount; j++) {
+                        const m = new THREE.Mesh(cloudGeo, cloudMat);
+                        m.position.set(j * 0.6, Math.random() * 0.3, Math.random() * 0.3);
+                        const s = 0.6 + Math.random() * 0.5;
+                        m.scale.set(s, s, s);
+                        cloud.add(m);
+                    }
+                    cloud.position.set(THREE.MathUtils.randFloat(-10, 10), THREE.MathUtils.randFloat(5.5, 8.5), THREE.MathUtils.randFloat(-6, -2));
+                    this.scene.add(cloud);
+                    this.clouds.push(cloud);
+                }
+            },
+
+            pauseGame() {
+                if (this.isPlaying) {
+                    this.isPaused = true;
+                    AudioManager.pauseBGM();
+                }
+            },
+
+            resumeGame() {
+                if (this.isPlaying) {
+                    this.isPaused = false;
+                    AudioManager.playBGM();
+                }
+            },
+
+            startGame() {
+                this.score = 0;
+                this.lives = 4;
+                this.comboCount = 0;
+                this.lastMilestoneTip = 0;
+                this.speedMultiplier = 1.0;
+                this.isShieldActive = false;
+                this.isPlaying = true;
+                this.isPaused = false;
+
+                this.spawner.clearAll();
+                this.cat.resetState();
+
+                UIManager.hideEndScreen();
+                UIManager.updateHUD(this.score, this.comboCount, this.lives, this.targetScore);
+            },
+
+            restartGame() {
+                this.startGame();
+            },
+
+            goToNextGame() {
+                window.location.href = NEXT_GAME_URL;
+            },
+
+            checkScoreMilestone() {
+                const currentMilestone = Math.floor(this.score / 100);
+                if (currentMilestone > this.lastMilestoneTip && currentMilestone > 0) {
+                    this.lastMilestoneTip = currentMilestone;
+                    const randomTip = HEALTH_TIPS[Math.floor(Math.random() * HEALTH_TIPS.length)];
+                    UIManager.showSpeechTip(randomTip);
+                }
+            },
+
+            onCatchItem(item) {
+                AudioManager.init();
+
+                if (item.isPowerUp) {
+                    AudioManager.playPowerup();
+                    const p = item.data;
+                    if (p.powerType === 'score') {
+                        this.score += 50;
+                    } else if (p.powerType === 'slow') {
+                        this.speedMultiplier = 0.4;
+                        setTimeout(() => this.speedMultiplier = 1.0, 5000);
+                    } else if (p.powerType === 'shield') {
+                        this.isShieldActive = true;
+                        this.cat.setShield(true);
+                        setTimeout(() => {
+                            this.isShieldActive = false;
+                            this.cat.setShield(false);
+                        }, 5000);
+                    } else if (p.powerType === 'heal') {
+                        this.lives = Math.min(4, this.lives + 1);
+                    }
+
+                    this.cat.updateSize(this.score);
+                    this.checkScoreMilestone();
+                    UIManager.updateHUD(this.score, this.comboCount, this.lives, this.targetScore);
                     return;
                 }
 
-                if (!controls.isLocked) {
-                    controls.lock();
-                    playBGM();
-                }
-            });
+                if (item.data.category === 'healthy') {
+                    this.score += 25;
+                    this.comboCount += 1;
 
-            blocker.addEventListener('click', () => { 
-                if(!isMobile) controls.lock(); 
-                blocker.style.display = 'none';
-                gameActive = true;
-                playBGM();
-            });
+                    AudioManager.playYum();
+                    this.cat.playEat();
 
-            if(isMobile) {
-                document.getElementById('mobile-controls').style.display = 'block';
-                setupMobileControls();
-            }
-
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-
-            buildKitchenEnvironment();
-            spawnInfoBoard();
-            spawnChefNPC();
-            spawnFoodItems();
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2) * resolutionScale);
-            document.body.appendChild(renderer.domElement);
-
-            window.addEventListener('resize', onWindowResize);
-
-            setInterval(() => {
-                if(gameActive && timeLeft > 0) {
-                    timeLeft--;
-                    if(timeLeft <= 0) endGame(false, "Masa Telah Tamat!");
-                }
-            }, 1000);
-        }
-
-        function setupMobileControls() {
-            const addTouch = (id, startFn, endFn) => {
-                const el = document.getElementById(id);
-                el.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); startFn(); }, { passive: false });
-                el.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); endFn(); }, { passive: false });
-            };
-
-            addTouch('btn-up', () => moveForward = true, () => moveForward = false);
-            addTouch('btn-down', () => moveBackward = true, () => moveBackward = false);
-            addTouch('btn-left', () => moveLeft = true, () => moveLeft = false);
-            addTouch('btn-right', () => moveRight = true, () => moveRight = false);
-
-            addTouch('btn-run', () => isSprinting = !isSprinting, () => {});
-            addTouch('btn-interact-e', () => interactPickUpOrChef(), () => {});
-            addTouch('btn-interact-f', () => interactPlaceDown(), () => {});
-
-            window.addEventListener('touchstart', (e) => {
-                if (!gameActive) return;
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    let touch = e.changedTouches[i];
-                    if (!touchActive && touch.clientX > window.innerWidth * 0.25) {
-                        touchActive = true;
-                        activeTouchId = touch.identifier;
-                        lastTouchX = touch.clientX;
-                        lastTouchY = touch.clientY;
-                        break;
+                    if (this.comboCount > 0 && this.comboCount % 5 === 0) {
+                        this.score += 50;
+                        UIManager.showCombo(this.comboCount);
                     }
-                }
-            }, { passive: false });
 
-            window.addEventListener('touchmove', (e) => {
-                if (!gameActive || !touchActive) return;
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    let touch = e.changedTouches[i];
-                    if (touch.identifier === activeTouchId) {
-                        let deltaX = touch.clientX - lastTouchX;
-                        let deltaY = touch.clientY - lastTouchY;
+                    this.cat.updateSize(this.score);
+                    this.checkScoreMilestone();
 
-                        lastTouchX = touch.clientX;
-                        lastTouchY = touch.clientY;
-
-                        const rotSpeed = 0.003 * sensitivity;
-                        camera.rotation.y -= deltaX * rotSpeed;
-                        camera.rotation.x -= deltaY * rotSpeed;
-                        
-                        camera.rotation.x = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, camera.rotation.x));
-                        break;
-                    }
-                }
-            }, { passive: false });
-
-            const resetTouch = (e) => {
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    if (e.changedTouches[i].identifier === activeTouchId) {
-                        touchActive = false;
-                        activeTouchId = null;
-                        break;
-                    }
-                }
-            };
-
-            window.addEventListener('touchend', resetTouch, { passive: false });
-            window.addEventListener('touchcancel', resetTouch, { passive: false });
-        }
-
-        function buildKitchenEnvironment() {
-            const canvasFloor = document.createElement('canvas'); canvasFloor.width = 256; canvasFloor.height = 256;
-            const ctxF = canvasFloor.getContext('2d');
-            ctxF.fillStyle = '#b91c1c'; ctxF.fillRect(0, 0, 256, 256);
-            ctxF.strokeStyle = '#7f1d1d'; ctxF.lineWidth = 6;
-            for(let i=0; i<=256; i+=32) {
-                ctxF.beginPath(); ctxF.moveTo(i, 0); ctxF.lineTo(i, 256); ctxF.stroke();
-                ctxF.beginPath(); ctxF.moveTo(0, i); ctxF.lineTo(256, i); ctxF.stroke();
-            }
-            const floorTexture = new THREE.CanvasTexture(canvasFloor);
-            floorTexture.wrapS = THREE.RepeatWrapping; floorTexture.wrapT = THREE.RepeatWrapping;
-            floorTexture.repeat.set(16, 16);
-
-            const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.3 }));
-            floor.rotation.x = -Math.PI / 2;
-            scene.add(floor);
-
-            const stripedWallTexture = createStripedWallTexture();
-            const wallMaterial = new THREE.MeshStandardMaterial({ map: stripedWallTexture, roughness: 0.5 });
-
-            const createWall = (x, z, rotY) => {
-                const wall = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), wallMaterial);
-                wall.position.set(x, 5, z); wall.rotation.y = rotY; scene.add(wall);
-            };
-            createWall(0, -15, 0); createWall(-15, 0, Math.PI / 2); createWall(15, 0, -Math.PI / 2); createWall(0, 15, Math.PI);
-
-            gltfLoader.load(TABLE_ROUND_URL, (gltf) => {
-                const table = gltf.scene; autoScaleAndCenterModel(table, 2.2); table.position.set(0, 0, -2); scene.add(table);
-                gltfLoader.load(PLATE_URL, (gltfP) => {
-                    plateObject = gltfP.scene; autoScaleAndCenterModel(plateObject, 1.2);
-                    plateObject.position.set(0, 1.48, -2); plateObject.userData = { isPlate: true };
-                    scene.add(plateObject);
-                    plateObject.traverse((child) => { if(child.isMesh) child.userData = { isPlate: true }; });
-                    interactables.push(plateObject);
-                });
-            });
-
-            createFoodCabinet(-7, -2, Math.PI / 2, "🍚 KARBOHIDRAT", "rgba(234, 179, 8, 0.9)", "#eab308"); 
-            createFoodCabinet(7, -2, -Math.PI / 2, "🥩 PROTEIN", "rgba(239, 68, 68, 0.9)", "#ef4444"); 
-            createFoodCabinet(-4, -7, 0, "🥦 SAYUR-SAYURAN", "rgba(34, 197, 94, 0.9)", "#22c55e");          
-            createFoodCabinet(4, -7, 0, "🍎 BUAH-BUAHAN", "rgba(249, 115, 22, 0.9)", "#f97316");           
-            createFoodCabinet(-2.2, 7, Math.PI, "🛑 UNHEALTHY", "rgba(185, 28, 28, 0.9)", "#b91c1c");   
-            createFoodCabinet(2.2, 7, Math.PI, "🛑 UNHEALTHY", "rgba(185, 28, 28, 0.9)", "#b91c1c");    
-        }
-
-        function spawnInfoBoard() {
-            new THREE.TextureLoader().load(RAW_BASE_URL + "images.jpeg", (texture) => {
-                const boardGroup = new THREE.Group();
-                const frame = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.7, 0.1), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-                boardGroup.add(frame);
-                const imgMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 2.5), new THREE.MeshBasicMaterial({ map: texture }));
-                imgMesh.position.z = 0.06; boardGroup.add(imgMesh);
-                boardGroup.position.set(7, 2.5, 2.5); boardGroup.rotation.y = -Math.PI / 2;
-                scene.add(boardGroup);
-            });
-        }
-
-        function createFoodCabinet(x, z, rotationY, labelText, bgCol, borderCol) {
-            gltfLoader.load(COUNTER_URL, (gltf) => {
-                const cabinet = gltf.scene; autoScaleAndCenterModel(cabinet, 2.5);
-                cabinet.position.set(x, 0, z); cabinet.rotation.y = rotationY;
-                const label = createCabinetLabel(labelText, bgCol, borderCol); label.position.set(x, 2.5, z);
-                scene.add(label); scene.add(cabinet);
-            });
-        }
-
-        function spawnChefNPC() {
-            gltfLoader.load(CHEF_URL, (gltf) => {
-                chefObject = gltf.scene; autoScaleAndCenterModel(chefObject, 1.8);
-                chefObject.position.set(-7, 0, 2.5); chefObject.rotation.y = Math.PI / 2;
-                chefObject.userData = { isChef: true, name: 'Chef Wan Suku' };
-                chefObject.add(createNameTag("👨‍🍳 Chef Wan Suku", chefObject, 1.2));
-                chefObject.traverse((child) => { if(child.isMesh) child.userData = { isChef: true, rootModel: chefObject }; });
-                scene.add(chefObject); interactables.push(chefObject);
-            });
-        }
-
-        function spawnFoodItems() {
-            const CABINET_Y = 1.62;
-            const positions = [
-                { item: FOOD_ITEMS[0], pos: [-7, CABINET_Y, -2.8] }, { item: FOOD_ITEMS[1], pos: [-7, CABINET_Y, -1.2] },
-                { item: FOOD_ITEMS[2], pos: [7, CABINET_Y, -2.8] }, { item: FOOD_ITEMS[3], pos: [7, CABINET_Y, -1.2] },
-                { item: FOOD_ITEMS[4], pos: [-4.8, CABINET_Y, -7] }, { item: FOOD_ITEMS[5], pos: [-3.2, CABINET_Y, -7] },
-                { item: FOOD_ITEMS[6], pos: [3.2, CABINET_Y, -7] }, { item: FOOD_ITEMS[7], pos: [4.8, CABINET_Y, -7] },
-                { item: FOOD_ITEMS[8], pos: [-3.2, CABINET_Y, 7] }, { item: FOOD_ITEMS[9], pos: [-2.2, CABINET_Y, 7] },
-                { item: FOOD_ITEMS[10], pos: [-1.2, CABINET_Y, 7] }, { item: FOOD_ITEMS[11], pos: [1.2, CABINET_Y, 7] },
-                { item: FOOD_ITEMS[12], pos: [2.2, CABINET_Y, 7] }, { item: FOOD_ITEMS[13], pos: [3.2, CABINET_Y, 7] }
-            ];
-
-            positions.forEach(data => {
-                gltfLoader.load(data.item.modelUrl, (gltf) => {
-                    const model = gltf.scene; autoScaleAndCenterModel(model, data.item.baseScale);
-                    model.position.set(...data.pos); model.userData = { ...data.item, isFood: true };
-                    const nameTag = createNameTag(data.item.name, model, 0.45);
-                    model.add(nameTag); model.userData.nameTag = nameTag;
-                    model.traverse((child) => { if(child.isMesh) child.userData = { ...data.item, isFood: true, rootModel: model }; });
-                    scene.add(model); interactables.push(model);
-                });
-            });
-        }
-
-        function onKeyDown(e) {
-            switch (e.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'ShiftLeft': isSprinting = true; break;
-                case 'KeyE': interactPickUpOrChef(); break;
-                case 'KeyF': interactPlaceDown(); break;
-            }
-        }
-
-        function onKeyUp(e) {
-            switch (e.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyD': moveRight = false; break;
-                case 'ShiftLeft': isSprinting = false; break;
-            }
-        }
-
-        function interactPickUpOrChef() {
-            if (!hoveredObject) return;
-            if (hoveredObject.userData.isChef) {
-                const dialogBox = document.getElementById('chef-dialog-box');
-                playChefSound();
-                manualUnlock = true;
-                dialogBox.style.display = (dialogBox.style.display === 'flex') ? 'none' : 'flex';
-                if(!isMobile && dialogBox.style.display === 'flex') controls.unlock();
-                return;
-            }
-
-            if (heldItem || !hoveredObject.userData.isFood) return;
-            let targetModel = hoveredObject.userData.rootModel || hoveredObject;
-            heldItem = targetModel;
-
-            if (heldItem.userData.nameTag) heldItem.userData.nameTag.visible = false;
-
-            scene.remove(heldItem); 
-            camera.add(heldItem);
-            autoScaleAndCenterModel(heldItem, 0.3);
-            heldItem.position.set(0.35, -0.3, -0.5); 
-            heldItem.rotation.set(0.2, -0.5, 0.1); 
-
-            document.getElementById('interaction-prompt').style.display = 'none';
-        }
-
-        function interactPlaceDown() {
-            if (!heldItem || !hoveredObject || !hoveredObject.userData.isPlate) return;
-            const itemData = heldItem.userData;
-
-            if (itemData.category === 'unhealthy') {
-                triggerMistake("❌ Ini bukan makanan sihat!"); return;
-            }
-            if (plateSlotState[itemData.type]) {
-                triggerMistake(`❌ Slot Makanan ini telah lengkap!`); return;
-            }
-
-            plateSlotState[itemData.type] = true;
-            camera.remove(heldItem); 
-            scene.add(heldItem);
-            
-            const itemY = itemData.plateY || 1.52;
-            const offsets = {
-                carbo:   [-0.2, itemY, -2.15],
-                protein: [ 0.2, itemY, -2.15],
-                vege:    [-0.2, itemY, -1.85],
-                fruit:   [ 0.2, itemY, -1.85]
-            };
-            
-            heldItem.position.set(...offsets[itemData.type]);
-            autoScaleAndCenterModel(heldItem, 0.25);
-            heldItem.rotation.set(0, 0, 0);
-            if (heldItem.userData.nameTag) heldItem.userData.nameTag.visible = false;
-            
-            interactables = interactables.filter(i => i !== heldItem);
-            heldItem = null; score += 125;
-
-            if (score >= 500) {
-                endGame(true, "Tahniah! Anda berjaya melengkapkan Pinggan Sihat Malaysia (Suku Suku Separuh) dengan sempurna!");
-            }
-        }
-
-        function triggerMistake(msg) {
-            lives--;
-            const prompt = document.getElementById('interaction-prompt');
-            prompt.innerText = msg; prompt.style.color = '#ef4444'; prompt.style.display = 'block';
-            setTimeout(() => { prompt.style.display = 'none'; prompt.style.color = '#facc15'; }, 2000);
-            if (lives <= 0) endGame(false, "Nyawa anda telah habis!");
-        }
-
-        function endGame(isWin, message) {
-            gameActive = false;
-            manualUnlock = true;
-            if(!isMobile) controls.unlock();
-            if (bgmAudio) bgmAudio.pause();
-
-            const goScreen = document.getElementById('game-over');
-            document.getElementById('go-title').innerText = isWin ? "🎉 TAHNIAH! SYABAS! 🎉" : "GAME OVER";
-            document.getElementById('go-msg').innerText = message;
-            goScreen.style.display = 'flex';
-
-            if (isWin) {
-                if (winAudio) { winAudio.currentTime = 0; winAudio.play().catch(e => console.log(e)); }
-                if (typeof confetti === 'function') confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = performance.now();
-
-            if (gameActive) {
-                const delta = (time - prevTime) / 1000;
-                
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-
-                const speed = isSprinting ? 8.0 : 4.0;
-
-                if (moveForward) velocity.z -= speed * 10.0 * delta;
-                if (moveBackward) velocity.z += speed * 10.0 * delta;
-                if (moveLeft) velocity.x -= speed * 10.0 * delta;
-                if (moveRight) velocity.x += speed * 10.0 * delta;
-
-                if (!isMobile && controls.isLocked) {
-                    controls.moveRight(velocity.x * delta);
-                    controls.moveForward(-velocity.z * delta);
-                } else if (isMobile) {
-                    const forward = new THREE.Vector3();
-                    camera.getWorldDirection(forward);
-                    forward.y = 0;
-                    forward.normalize();
-
-                    const side = new THREE.Vector3();
-                    side.crossVectors(camera.up, forward).normalize();
-
-                    const moveDir = new THREE.Vector3();
-                    moveDir.addScaledVector(forward, -velocity.z * delta);
-                    moveDir.addScaledVector(side, -velocity.x * delta);
-
-                    camera.position.add(moveDir);
-                    camera.position.y = 1.7;
-                }
-
-                raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-                const intersects = raycaster.intersectObjects(interactables.filter(obj => !obj.userData.isTag), true);
-                const prompt = document.getElementById('interaction-prompt');
-
-                if (intersects.length > 0 && intersects[0].distance < 3.8) {
-                    let hitMesh = intersects[0].object;
-                    if (!hitMesh.userData.isTag) {
-                        hoveredObject = hitMesh;
-                        if (hitMesh.userData.isChef) {
-                            prompt.innerText = `Tekan [E] / Butang Bicara untuk Chef Wan`; prompt.style.display = 'block';
-                        } else if (!heldItem && hitMesh.userData.isFood) {
-                            prompt.innerText = `Ambil ${hitMesh.userData.name}`; prompt.style.display = 'block';
-                        } else if (heldItem && hitMesh.userData.isPlate) {
-                            prompt.innerText = `Letak ${heldItem.userData.name}`; prompt.style.display = 'block';
-                        }
+                    if (this.score >= this.targetScore) {
+                        this.triggerWin();
+                        return;
                     }
                 } else {
-                    hoveredObject = null;
-                    if(prompt.style.color !== 'rgb(239, 68, 68)') prompt.style.display = 'none';
+                    if (this.isShieldActive) {
+                        AudioManager.playPowerup();
+                        return;
+                    }
+
+                    this.lives -= 1;
+                    this.comboCount = 0;
+
+                    AudioManager.playBleh();
+                    this.cat.playSad();
+                    UIManager.triggerRedFlash();
+
+                    if (this.lives <= 0) {
+                        this.triggerGameOver();
+                        return;
+                    }
                 }
 
-                interactables.forEach(obj => { if(obj.userData.isFood && obj !== heldItem) obj.rotation.y += 0.01; });
+                UIManager.updateHUD(this.score, this.comboCount, this.lives, this.targetScore);
+            },
+
+            triggerGameOver() {
+                this.isPlaying = false;
+                AudioManager.stopBGM();
+                AudioManager.playLose();
+                this.cat.playCry();
+                this.spawner.clearAll();
+                UIManager.showEndScreen("GAME OVER", "Kucing anda kehilangan semua nyawa!", false);
+            },
+
+            triggerWin() {
+                this.isPlaying = false;
+                AudioManager.stopBGM();
+                AudioManager.playWin();
+                this.cat.playCelebrate();
+                this.spawner.clearAll();
+
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+
+                UIManager.showEndScreen("TAHNIAH!", `Anda berjaya mengumpul ${this.targetScore} markah! 🎉`, true);
+            },
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            },
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const delta = this.clock.getDelta();
+
+                if (this.isPlaying && !this.isPaused) {
+                    this.cat.update(delta);
+                    this.spawner.update(delta, this.speedMultiplier, this.targetScore);
+                    this.controls.checkCollisions();
+
+                    this.clouds.forEach(c => {
+                        c.position.x += delta * 0.3;
+                        if (c.position.x > 11) c.position.x = -11;
+                    });
+                }
+
+                this.renderer.render(this.scene, this.camera);
             }
+        };
 
-            prevTime = time;
-            renderer.render(scene, camera);
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        window.onload = () => {
+            GameManager.init();
+        };
     </script>
 </body>
 </html>
