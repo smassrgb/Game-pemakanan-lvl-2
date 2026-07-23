@@ -77,17 +77,22 @@
                     <span id="hud-score" class="text-lg sm:text-2xl font-black text-amber-500">0 / 500</span>
                 </div>
 
-                <!-- ATAS KANAN: COMBO & BUTTON & SPEECH BUBBLE DI TEPI -->
+                <!-- ATAS KANAN: COMBO & BUTTONS & SPEECH BUBBLE -->
                 <div class="flex flex-col items-end gap-2 pointer-events-auto">
                     <div class="bg-white/85 backdrop-blur-md px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border-2 border-sky-300 shadow-lg flex items-center gap-2">
                         <span id="hud-combo" class="text-sm sm:text-lg font-black text-orange-500">Combo x0</span>
                     </div>
 
-                    <button onclick="UIManager.toggleGuideModal(true)" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
-                        📖 Panduan
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="UIManager.toggleSettingsModal(true)" class="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            ⚙️ Tetapan
+                        </button>
+                        <button onclick="UIManager.toggleGuideModal(true)" class="bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl shadow-md border-2 border-white transition-all">
+                            📖 Panduan
+                        </button>
+                    </div>
 
-                    <!-- SPEECH BUBBLE KUCING (POSISI TEPI KANAN & KECIK) -->
+                    <!-- SPEECH BUBBLE KUCING -->
                     <div id="cat-speech-bubble" class="transform scale-0 opacity-0 transition-all duration-300 bg-amber-400 text-slate-900 font-extrabold p-2.5 sm:p-3 rounded-2xl shadow-xl border-2 border-white max-w-[160px] sm:max-w-[200px] text-right mt-1">
                         <div class="text-[10px] sm:text-xs leading-tight" id="cat-speech-text">
                             🐱 "Makan buah & sayur hari-hari tau!"
@@ -100,6 +105,60 @@
         <!-- COMBO POPUP NOTIFICATION -->
         <div id="combo-badge" class="self-center transform scale-0 transition-transform duration-300 bg-gradient-to-r from-amber-500 to-red-500 text-white font-black px-6 py-2 rounded-full text-base sm:text-xl shadow-2xl border-2 border-white pointer-events-none mb-10">
             🔥 HEALTHY COMBO x5! (+50)
+        </div>
+    </div>
+
+    <!-- PANEL TETAPAN / SETTINGS MODAL -->
+    <div id="modal-settings" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border-4 border-sky-300 transform transition-all">
+            <div class="flex justify-between items-center border-b-2 border-slate-100 pb-3 mb-4">
+                <h3 class="text-xl font-black text-slate-800">⚙️ Tetapan Permainan</h3>
+                <button onclick="UIManager.toggleSettingsModal(false)" class="text-slate-400 hover:text-slate-600 text-2xl font-bold px-2">✕</button>
+            </div>
+
+            <div class="space-y-5 text-left">
+                <!-- SOUND SETTINGS -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-black text-slate-700 uppercase">🔊 Kelantangan Bunyi (Volume)</label>
+                        <span id="label-volume" class="text-xs font-black text-sky-600">80%</span>
+                    </div>
+                    <input id="slider-volume" type="range" min="0" max="1" step="0.05" value="0.8" 
+                           oninput="SettingsManager.updateVolume(this.value)"
+                           class="w-full accent-sky-500 cursor-pointer">
+                </div>
+
+                <!-- SENSITIVITY SETTINGS -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-black text-slate-700 uppercase">🎯 Kepekaan Kawalan (Sensitivity)</label>
+                        <span id="label-sensitivity" class="text-xs font-black text-sky-600">1.0x</span>
+                    </div>
+                    <input id="slider-sensitivity" type="range" min="0.5" max="2.5" step="0.1" value="1.0" 
+                           oninput="SettingsManager.updateSensitivity(this.value)"
+                           class="w-full accent-sky-500 cursor-pointer">
+                </div>
+
+                <!-- RESOLUTION SETTINGS -->
+                <div>
+                    <label class="text-xs font-black text-slate-700 uppercase block mb-1">🖥️ Kualiti Grafik (Resolution)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="btn-reso-low" onclick="SettingsManager.updateResolution('low')" class="py-2 text-xs font-black rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                            Rendah
+                        </button>
+                        <button id="btn-reso-med" onclick="SettingsManager.updateResolution('medium')" class="py-2 text-xs font-black rounded-xl border-2 border-sky-500 bg-sky-500 text-white shadow-md transition-all">
+                            Sederhana
+                        </button>
+                        <button id="btn-reso-high" onclick="SettingsManager.updateResolution('high')" class="py-2 text-xs font-black rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                            Tinggi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="UIManager.toggleSettingsModal(false)" class="w-full bg-slate-800 text-white font-extrabold py-3 rounded-2xl shadow-lg mt-6 active:scale-95 transition-all">
+                Simpan & Tutup ✖️
+            </button>
         </div>
     </div>
 
@@ -183,7 +242,6 @@
     </div>
 
     <script>
-        // TUKAR LINK INI KE GAME ANDA YANG SETERUSNYA
         const NEXT_GAME_URL = "https://google.com"; 
 
         const RAW_BASE_URL = "https://raw.githubusercontent.com/smassrgb/Game-Pemakanan-Seimbangg/main/";
@@ -231,6 +289,59 @@
             { id: 'heart', powerType: 'heal', modelUrl: RAW_BASE_URL + 'Heart%20by%20Poly%20by%20Google%20-%208RA5hHU5gHK.glb', scale: 0.65 }
         ];
 
+        /* SETTINGS MANAGER */
+        const SettingsManager = {
+            volume: 0.8,
+            sensitivity: 1.0,
+            resolution: 'medium',
+
+            updateVolume(val) {
+                this.volume = parseFloat(val);
+                document.getElementById('label-volume').innerText = `${Math.round(this.volume * 100)}%`;
+                if (AudioManager.bgm) {
+                    AudioManager.bgm.volume = 0.4 * this.volume;
+                }
+            },
+
+            updateSensitivity(val) {
+                this.sensitivity = parseFloat(val);
+                document.getElementById('label-sensitivity').innerText = `${this.sensitivity.toFixed(1)}x`;
+            },
+
+            updateResolution(level) {
+                this.resolution = level;
+                
+                const btnLow = document.getElementById('btn-reso-low');
+                const btnMed = document.getElementById('btn-reso-med');
+                const btnHigh = document.getElementById('btn-reso-high');
+
+                const resetBtn = (btn) => {
+                    btn.className = "py-2 text-xs font-black rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all";
+                };
+                const setActive = (btn) => {
+                    btn.className = "py-2 text-xs font-black rounded-xl border-2 border-sky-500 bg-sky-500 text-white shadow-md transition-all";
+                };
+
+                resetBtn(btnLow); resetBtn(btnMed); resetBtn(btnHigh);
+
+                let pixelRatio = 1.0;
+                if (level === 'low') {
+                    pixelRatio = 0.75;
+                    setActive(btnLow);
+                } else if (level === 'medium') {
+                    pixelRatio = 1.0;
+                    setActive(btnMed);
+                } else if (level === 'high') {
+                    pixelRatio = Math.min(window.devicePixelRatio, 2);
+                    setActive(btnHigh);
+                }
+
+                if (GameManager.renderer) {
+                    GameManager.renderer.setPixelRatio(pixelRatio);
+                }
+            }
+        };
+
         /* AUDIO MANAGER */
         const AudioManager = {
             ctx: null,
@@ -244,7 +355,7 @@
                 if (!this.bgm) {
                     this.bgm = new Audio(BGM_URL);
                     this.bgm.loop = true;
-                    this.bgm.volume = 0.4;
+                    this.bgm.volume = 0.4 * SettingsManager.volume;
                 }
             },
             playBGM() {
@@ -273,8 +384,11 @@
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(350, now);
                 osc.frequency.exponentialRampToValueAtTime(750, now + 0.15);
-                gain.gain.setValueAtTime(0.3, now);
+                
+                const vol = 0.3 * SettingsManager.volume;
+                gain.gain.setValueAtTime(vol, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(now); osc.stop(now + 0.15);
             },
@@ -286,8 +400,11 @@
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(180, now);
                 osc.frequency.linearRampToValueAtTime(80, now + 0.25);
-                gain.gain.setValueAtTime(0.3, now);
+                
+                const vol = 0.3 * SettingsManager.volume;
+                gain.gain.setValueAtTime(vol, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(now); osc.stop(now + 0.25);
             },
@@ -299,19 +416,23 @@
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
-                gain.gain.setValueAtTime(0.3, now);
+                
+                const vol = 0.3 * SettingsManager.volume;
+                gain.gain.setValueAtTime(vol, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                
                 osc.connect(gain); gain.connect(this.ctx.destination);
                 osc.start(now); osc.stop(now + 0.2);
             },
             playWin() {
                 if (!this.ctx) return;
                 const now = this.ctx.currentTime;
+                const vol = 0.2 * SettingsManager.volume;
                 [400, 520, 650, 800].forEach((freq, i) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.frequency.setValueAtTime(freq, now + i * 0.1);
-                    gain.gain.setValueAtTime(0.2, now + i * 0.1);
+                    gain.gain.setValueAtTime(vol, now + i * 0.1);
                     gain.gain.linearRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
                     osc.connect(gain); gain.connect(this.ctx.destination);
                     osc.start(now + i * 0.1); osc.stop(now + i * 0.1 + 0.2);
@@ -320,12 +441,13 @@
             playLose() {
                 if (!this.ctx) return;
                 const now = this.ctx.currentTime;
+                const vol = 0.3 * SettingsManager.volume;
                 [300, 240, 180, 120].forEach((freq, i) => {
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(freq, now + i * 0.15);
-                    gain.gain.setValueAtTime(0.3, now + i * 0.15);
+                    gain.gain.setValueAtTime(vol, now + i * 0.15);
                     gain.gain.linearRampToValueAtTime(0.01, now + i * 0.15 + 0.2);
                     osc.connect(gain); gain.connect(this.ctx.destination);
                     osc.start(now + i * 0.15); osc.stop(now + i * 0.15 + 0.2);
@@ -421,7 +543,8 @@
             }
 
             update(delta) {
-                this.group.position.x += (this.targetX - this.group.position.x) * 0.25;
+                const lerpFactor = THREE.MathUtils.clamp(0.25 * SettingsManager.sensitivity, 0.05, 0.8);
+                this.group.position.x += (this.targetX - this.group.position.x) * lerpFactor;
                 const tilt = (this.targetX - this.group.position.x) * -0.08;
                 this.group.rotation.z = THREE.MathUtils.clamp(tilt, -0.2, 0.2);
 
@@ -627,10 +750,11 @@
                 window.addEventListener('keydown', (e) => {
                     if (!this.gameManager.isPlaying || this.gameManager.isPaused) return;
                     AudioManager.playBGM();
+                    const step = 0.8 * SettingsManager.sensitivity;
                     if (e.key === 'ArrowLeft' || e.key === 'a') {
-                        this.cat.targetX = Math.max(this.cat.minX, this.cat.targetX - 0.8);
+                        this.cat.targetX = Math.max(this.cat.minX, this.cat.targetX - step);
                     } else if (e.key === 'ArrowRight' || e.key === 'd') {
-                        this.cat.targetX = Math.min(this.cat.maxX, this.cat.targetX + 0.8);
+                        this.cat.targetX = Math.min(this.cat.maxX, this.cat.targetX + step);
                     }
                 });
             }
@@ -712,6 +836,17 @@
                 }
             },
 
+            toggleSettingsModal(show) {
+                const modal = document.getElementById('modal-settings');
+                if (show) {
+                    modal.classList.remove('hidden');
+                    GameManager.pauseGame();
+                } else {
+                    modal.classList.add('hidden');
+                    GameManager.resumeGame();
+                }
+            },
+
             showEndScreen(title, desc, isWin = false) {
                 document.getElementById('modal-title').innerText = title;
                 document.getElementById('modal-desc').innerText = desc;
@@ -765,9 +900,10 @@
 
                 this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 this.renderer.shadowMap.enabled = true;
                 container.appendChild(this.renderer.domElement);
+
+                SettingsManager.updateResolution('medium');
 
                 this.loader = new THREE.GLTFLoader();
 
